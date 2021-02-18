@@ -3,17 +3,21 @@ import numpy as np
 import random as rd
 import matplotlib.pyplot as plt
 import math
+import copy
 
+COLORS = ['red', 'blue', 'green']
+
+#		Calcule the destance
 def destance_2_points(p0, p1):
 	dx = (p0[0] - p1[0])**2
 	dy = (p0[1] - p1[1])**2
 	return math.sqrt(dx + dy)
 
+#		Update the center of K_points by calculing the average of each points
 def update_center_of_k_points(data_lst, k_center):
 	new_points = []
 	for i in range(len(data_lst)):
 		center = data_lst[i]
-		#for _, values in center.iterrows():
 		average_a, average_b = 0, 0
 		j = 0
 		for _ in range(len(center)):
@@ -31,9 +35,9 @@ def update_center_of_k_points(data_lst, k_center):
 		k_point['a'] = new_points[i][0]
 		k_point['b'] = new_points[i][1]
 		i += 1
-
-
 	return k_center
+
+#		Find The closest center to the point by calculing the destance
 def get_the_closest_center(av, bv):
 	global k_center
 	min_dest = -1
@@ -51,7 +55,7 @@ def get_the_closest_center(av, bv):
 		i += 1	
 	return result_index
 
-
+#		Assign points to the closest cluster Points centroid and put it in the list by k index
 def assign_points_to_the_closeest_center():
 	global k_center, data, K
 	data_lst = [[] for _ in range(K)]
@@ -61,7 +65,9 @@ def assign_points_to_the_closeest_center():
 		close_one = get_the_closest_center(av, bv)
 		data_lst[close_one].append([av, bv])
 	k_center = update_center_of_k_points(data_lst, k_center)
+	return data_lst
 
+#		Calcule The defferent between the old k_point and the new after the update 
 def average_of_changing(old):
 	global k_center
 	old_value = []
@@ -69,34 +75,33 @@ def average_of_changing(old):
 	dest = 0
 	for  _, v in old.iterrows():
 		old_value.append([v['a'],v['b']])
-
 	for _, v in k_center.iterrows():
 		new_value.append([v['a'],v['b']])
 	for i in range(len(old_value)):
 		dest += destance_2_points(old_value[i], new_value[i])
-
 	return dest
+
 
 data =  pd.read_csv('simpleData.csv')
 K = 3
 k_center = data.sample(n=K)
-
 reapet = 0
-old = [i for i in k_center]
-print(k_center)
-print('AFTER')
+old = copy.copy(k_center)
 change = 0
-while reapet == 0 or change > 2:
-	old = k_center
+
+#		Reapet the K_mean algo Untel the defferent between the old points and the new == 0
+while reapet == 0 or change != 0:
+	old = copy.copy(k_center)
 	reapet += 1
-	assign_points_to_the_closeest_center()
+	data_lst = assign_points_to_the_closeest_center()
 	change = average_of_changing(old)
-	print(reapet, change)
-	print(k_center)
-	print(old)
-#	Visualize The Data
-plt.scatter(data["a"], data["b"],c='red')
-plt.scatter(k_center['a'], k_center['b'], c='blue')
-plt.xlabel("a")
-plt.ylabel('b')
+
+#		Show the Data
+for i in range(len(data_lst)):
+	data = data_lst[i]
+	for j in range(len(data)):
+		plt.scatter(data[j][0], data[j][1], c=COLORS[i])
+
+plt.xlabel("a_Values")
+plt.ylabel('b_Values')
 plt.show()
